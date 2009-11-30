@@ -1,0 +1,12 @@
+application: yttrium-ws
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /([^/]*\.(html|ico))
+  static_files: static/\1
+  upload: static/.*
+
+- url: .*
+  script: main.py

@@ -1,0 +1,51 @@
+<html>
+    <head>
+        <title>Cascade API Exploer</title>
+
+        <style type="text/css">
+            .jsonPayload {
+                width: 80%;
+                height: 30%;
+            }
+        </style>
+
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                $("#executeButton").click(function() {
+                    $.ajax({
+                        url: "/api/cascade",
+                        type: "POST",
+                        data: $("#requestJSON").text(),
+                        contentType: "application/json",
+                        dataType: "json",
+                        complete: function() {
+                            alert("Response received!");
+                        }
+                    });
+                });
+            });
+        </script>
+    </head>
+
+    <body>
+        <div>
+            <textarea class="jsonPayload" id="requestJSON">
+                {
+                    "method" : "ListFolders",
+                    "params" : [{}],
+                    "id" : "12345"
+                }
+            </textarea>
+            <button id="executeButton">click me</button>
+        </div>
+
+        <div>
+            <textarea class="jsonPayload" id="responseJSON">response json</textarea>
+        </div>
+    </body>
+</html>
+
+<!--
+ | vim: filetype=html tabstop=4 shiftwidth=4 expandtab
+ -->

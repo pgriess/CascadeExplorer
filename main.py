@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 #
 # Create an Atom API to Yahoo! Mail.
+#
+# NOTE: Do we really always need to redirect to http://www.yttrium.ws? If
+#       the problem is that the bounce-back hostname is configured w/ the
+#       key, we can just create a key pointing to localhost.yttrium.ws.
+#
+# NOTE: Need to figure out how to expunge keys from git history if making
+#       this open source. Or change keys and de-activate the old one.
 
 from google.appengine.api.urlfetch import fetch 
 from google.appengine.ext import webapp
@@ -10,6 +17,7 @@ import cgi
 import logging
 import oauth
 import pprint
+import simplejson
 import urllib
 
 REQUEST_TOKEN_COOKIE_NAME = 'rt'
@@ -177,10 +185,28 @@ class APIHandler(webapp.RequestHandler):
     def get(self):
         if not ACCESS_TOKEN_COOKIE_NAME in self.request.cookies:
             self.redirect(
-                '/auth/oauth/init?' + \
-                    urllib.urlencode(
-                        [(u'url', self.request.url)]
-                    )
+                'http://www.yttrium.ws/auth/oauth/init?' + \
+                urllib.urlencode(
+                    [(u'url', self.request.url)]
+                )
+            )
+            return
+
+        self.response.headers['Content-Type'] = 'text/plain'
+        self.response.out.write('Access token: ok')
+
+class ExplorerHandler(webapp.RequestHandler):
+    '''Explore the Cascade API.'''
+
+    JSON_ENDPOINT_URL = 'http://mail.yahooapis.com/ws/mail/v1.1/jsonrpc'
+
+    def get(self):
+        if not ACCESS_TOKEN_COOKIE_NAME in self.request.cookies:
+            self.redirect(
+                'http://www.yttrium.ws/auth/oauth/init?' + \
+                urllib.urlencode(
+                    [(u'url', self.request.url)]
+                )
             )
             return
 
@@ -193,6 +219,7 @@ def main():
             ('/auth/oauth/init', OAuthInitHandler),
             ('/auth/oauth/finish', OAuthFinishHandler),
             ('/api', APIHandler),
+            ('/explorer', ExplorerHandler),
             ('/', MainHandler)
         ],
         debug = True

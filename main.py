@@ -21,9 +21,6 @@
 #         will need to send it back from the web service. Maybe use MXHR
 #         to get both request and response back using a single response.
 #
-#   - Replace lame explicit checks for cookies / auth with decorators.
-#     We probably need 2 varieties: one redirecting, one not.
-#
 #   - Use Django directly so that porting off of GAE is easier.
 
 import os
@@ -52,6 +49,85 @@ import urllib2
 REQUEST_TOKEN_COOKIE_NAME = 'rt'
 ACCESS_TOKEN_COOKIE_NAME = 'at'
 
+class oauth_consumer:
+    '''A decorator class for RequestHandler methods; populates the handler
+       with instance variables _oaSig and _oaConsumer for working with OAuth.'''
+
+    def __init__(self):
+        pass
+
+    def __call__(self, f):
+        def wrapper(wr_self, *wr_args, **wr_kwargs):
+            wr_self._oaConsumer = oauth.OAuthConsumer(
+                u'dj0yJmk9eTVoMnNFbHBlbVQ0JmQ9WVdrOVkzcEtNR3QwTXpnbWNHbzlOakkxTXprd05qZzEmcz1jb25zdW1lcnNlY3JldCZ4PWQ1',
+                u'4dc5bf318e068d8d518676d2eb8b1d6376bf4fb3'
+            )
+            wr_self._oaSig = oauth.OAuthSignatureMethod_HMAC_SHA1()
+
+            return f(wr_self, *wr_args, **wr_kwargs)
+
+        return wrapper
+
+class oauth_token:
+    '''A decorator class for RequestHandler methods; ensures that a valid
+       OAuth access token cookie exists and stores it in self._oaToken. Can
+       issue a 302 over to /oauth/init to retrieve one if not.
+    
+       - The 'redirect' keyword argument specifies a boolean indicating
+         whether or not to 302 on failure. The default is a 403.'''
+
+    def __init__(self, cookieName, redirect = False):
+        self._cookieName = cookieName
+        self._redirect = redirect
+
+    def __call__(self, f):
+        def wrapper(wr_self, *wr_args, **wr_kwargs):
+            # If our cookie doesn't exist, react as specified by our caller
+            if not self._cookieName in wr_self.request.cookies:
+                logging.warning('No access token found in request')
+
+                if self._redirect:
+                    wr_self.redirect(
+                        'http://www.yttrium.ws/auth/oauth/init?' + \
+                        urllib.urlencode(
+                            [(u'url', wr_self.request.url)]
+                        )
+                    )
+                else:
+                    wr_self.response.set_status(403)
+
+                return
+
+            # Parse bits from the cookie into an OAuth token object
+            tokenDict = dict(
+                cgi.parse_qsl(
+                    urllib.unquote_plus(
+                        wr_self.request.cookies[self._cookieName]
+                    )
+                )
+            )
+
+            if not u'oauth_token' in tokenDict:
+                logging.warning('No "%s" key in the "%s" cookie.' % ('oauth_token', self._cookieName))
+                wr_self.response.set_status(403)
+                return
+
+            if not u'oauth_token_secret' in tokenDict:
+                logging.warning('No "%s" key in the "%s" cookie.' % ('oauth_token_secret', self._cookieName))
+                wr_self.response.set_status(403)
+                return
+
+            # We've got a valid token; create it and invoke the function
+            # being wrapped
+            wr_self._oaToken = oauth.OAuthToken(
+                tokenDict['oauth_token'],
+                tokenDict['oauth_token_secret']
+            )
+
+            return f(wr_self, *wr_args, **wr_kwargs)
+
+        return wrapper
+
 class MainHandler(webapp.RequestHandler):
     '''Other stuff should go here.'''
 
@@ -59,20 +135,12 @@ class MainHandler(webapp.RequestHandler):
         self.response.headers[u'Content-Type'] = u'text/plain'
         self.response.out.write(u'Hello, world!')
 
-class OAuthHandler(webapp.RequestHandler):
-    '''Superclass for OAuth-related handlers.'''
-
-    _oaConsumer = oauth.OAuthConsumer(
-        u'dj0yJmk9eTVoMnNFbHBlbVQ0JmQ9WVdrOVkzcEtNR3QwTXpnbWNHbzlOakkxTXprd05qZzEmcz1jb25zdW1lcnNlY3JldCZ4PWQ1',
-        u'4dc5bf318e068d8d518676d2eb8b1d6376bf4fb3'
-    )
-    _oaSig = oauth.OAuthSignatureMethod_HMAC_SHA1()
-
-class OAuthInitHandler(OAuthHandler):
+class OAuthInitHandler(webapp.RequestHandler):
     '''Initialize the OAuth token acquisition process. Acquires a request
        token and asks for it to be validated by the user. Stashes away the
        secret for the request token in a cookie.'''
 
+    @oauth_consumer()
     def get(self):
         url = self.request.get('url')
 
@@ -117,7 +185,7 @@ class OAuthInitHandler(OAuthHandler):
         )
         self.response.headers.add_header(
             u'Set-Cookie',
-            u'%s=; domain=.yttrium.ws; path=/' % (ACCESS_TOKEN_COOKIE_NAME)
+            u'%s=; domain=.yttrium.ws; path=/; max-age=0' % (ACCESS_TOKEN_COOKIE_NAME)
         )
         self.redirect(
             u'https://api.login.yahoo.com/oauth/v2/request_auth?' +
@@ -125,42 +193,24 @@ class OAuthInitHandler(OAuthHandler):
         )
         return
 
-class OAuthFinishHandler(OAuthHandler):
+class OAuthFinishHandler(webapp.RequestHandler):
     '''Complete the OAuth token acquisition process. Acquires a validated
        request token and exchanges it for an access token. Stashes away the
        secret for the access token in a cookie.'''
 
+    @oauth_token(REQUEST_TOKEN_COOKIE_NAME)
     def get(self):
         url = self.request.get('url')
 
-        if not REQUEST_TOKEN_COOKIE_NAME in self.request.cookies:
-            logging.warning('No "%s" cookie present' % (REQUEST_TOKEN_COOKIE_NAME))
-            self.response.set_status(403)
-            return
+        self._oaToken.set_verifier(self.request.get('oauth_verifier'))
 
-        reqTokenDict = dict(cgi.parse_qsl(urllib.unquote_plus(self.request.cookies[REQUEST_TOKEN_COOKIE_NAME])))
-        logging.debug('reqTokenDict: ' + pprint.pformat(reqTokenDict))
-
-        if not u'oauth_token' in reqTokenDict:
-            logging.warning('No "%s" key in the "%s" cookie.' % ('oauth_token', REQUEST_TOKEN_COOKIE_NAME))
-            self.response.set_status(403)
-            return
-
-        if reqTokenDict[u'oauth_token'] != self.request.get('oauth_token'):
+        # Make sure the token from our callback matches the one from
+        # our cookie
+        if self._oaToken.key != self.request.get('oauth_token'):
             logging.warning('Cookie and URL disagree about request token name')
             self.response.set_status(403)
             return
 
-        if not u'oauth_token_secret' in reqTokenDict:
-            logging.warning('No "%s" key in the "%s" cookie.' % ('oauth_token_secret', REQUEST_TOKEN_COOKIE_NAME))
-            self.response.set_status(403)
-            return
-
-        oaReqToken = oauth.OAuthToken(
-            self.request.get('oauth_token'),
-            reqTokenDict[u'oauth_token_secret']
-        )
-        oaReqToken.set_verifier(self.request.get('oauth_verifier'))
         oaReq = oauth.OAuthRequest(
             http_method = u'GET',
             http_url = u'https://api.login.yahoo.com/oauth/v2/get_token',
@@ -190,7 +240,7 @@ class OAuthFinishHandler(OAuthHandler):
        
         self.response.headers.add_header(
             u'Set-Cookie',
-            u'%s=; domain=.yttrium.ws; path=/' % (REQUEST_TOKEN_COOKIE_NAME)
+            u'%s=; domain=.yttrium.ws; path=/; max-age=0' % (REQUEST_TOKEN_COOKIE_NAME)
         )
         self.response.headers.add_header(
             u'Set-Cookie',
@@ -211,37 +261,16 @@ class OAuthFinishHandler(OAuthHandler):
         self.response.headers['Content-Type'] = 'text/plain'
         self.response.out.write('Access token: set')
 
-class CascadeAPIHandler(OAuthHandler):
+class CascadeAPIHandler(webapp.RequestHandler):
     '''The Cascade API handler. Requires an authenticated session and
        does not redirect to get one.'''
 
     JSON_ENDPOINT_URL = u'http://mail.yahooapis.com/ws/mail/v1.1/jsonrpc'
 
+    @oauth_token(ACCESS_TOKEN_COOKIE_NAME)
     def post(self):
-        if not ACCESS_TOKEN_COOKIE_NAME in self.request.cookies:
-            logging.warning('No access token found in request')
-            self.response.set_status(403)
-            return
-
         # Construct a signed URL. We can do this regardless of the POST
         # data provided to us by the client.
-        accTokenDict = dict(cgi.parse_qsl(urllib.unquote_plus(self.request.cookies[ACCESS_TOKEN_COOKIE_NAME])))
-        logging.debug('accTokenDict: ' + pprint.pformat(accTokenDict))
-
-        if not u'oauth_token' in accTokenDict:
-            logging.warning('No "%s" key in the "%s" cookie.' % ('oauth_token', ACCESS_TOKEN_COOKIE_NAME))
-            self.response.set_status(403)
-            return
-
-        if not u'oauth_token_secret' in accTokenDict:
-            logging.warning('No "%s" key in the "%s" cookie.' % ('oauth_token_secret', ACCESS_TOKEN_COOKIE_NAME))
-            self.response.set_status(403)
-            return
-
-        oaAccToken = oauth.OAuthToken(
-            accTokenDict['oauth_token'],
-            accTokenDict['oauth_token_secret']
-        )
         oaReq = oauth.OAuthRequest(
             http_method = u'POST',
             http_url = self.JSON_ENDPOINT_URL,
@@ -249,11 +278,11 @@ class CascadeAPIHandler(OAuthHandler):
                 u'oauth_nonce' : oauth.generate_nonce(),
                 u'oauth_timestamp' : oauth.generate_timestamp(),
                 u'oauth_consumer_key' : self._oaConsumer.key,
-                u'oauth_token' : oaAccToken.key,
+                u'oauth_token' : self._oaToken.key,
                 u'oauth_version' : u'1.0'
             }
         )
-        oaReq.sign_request(self._oaSig, self._oaConsumer, oaAccToken)
+        oaReq.sign_request(self._oaSig, self._oaConsumer, self._oaToken)
         logging.debug('Cascade JSON request URL: "%s"', oaReq.to_url())
 
         try:
@@ -277,16 +306,8 @@ class CascadeAPIHandler(OAuthHandler):
 class ExplorerHandler(webapp.RequestHandler):
     '''Explore the Cascade API.'''
 
+    @oauth_token(ACCESS_TOKEN_COOKIE_NAME, True)
     def get(self):
-        if not ACCESS_TOKEN_COOKIE_NAME in self.request.cookies:
-            self.redirect(
-                'http://www.yttrium.ws/auth/oauth/init?' + \
-                urllib.urlencode(
-                    [(u'url', self.request.url)]
-                )
-            )
-            return
-
         gtemplPath = os.path.join(
             os.path.dirname(__file__),
             'gtmpl',

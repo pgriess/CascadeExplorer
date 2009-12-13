@@ -26,6 +26,16 @@
 #
 #   - Use Django directly so that porting off of GAE is easier.
 
+import os
+import sys
+
+# Add the lib/ directory to our path so that we don't have to keep all
+# 3rd party libraries in the root of our application
+sys.path.insert(
+    0,
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), 'lib')
+)
+
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app

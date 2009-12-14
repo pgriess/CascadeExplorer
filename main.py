@@ -49,14 +49,17 @@ import urllib2
 REQUEST_TOKEN_COOKIE_NAME = 'rt'
 ACCESS_TOKEN_COOKIE_NAME = 'at'
 
+###
+# XXX: Make this a class annotation, as we're just using this to get to
+#      'self' anyway.
 def oauth_consumer(f):
     '''A decorator function for RequestHandler methods; populates the handler
        with instance variables _oaSig and _oaConsumer for working with OAuth.'''
 
     def wrapper(wr_self, *wr_args, **wr_kwargs):
         wr_self._oaConsumer = oauth.OAuthConsumer(
-            u'dj0yJmk9eTVoMnNFbHBlbVQ0JmQ9WVdrOVkzcEtNR3QwTXpnbWNHbzlOakkxTXprd05qZzEmcz1jb25zdW1lcnNlY3JldCZ4PWQ1',
-            u'4dc5bf318e068d8d518676d2eb8b1d6376bf4fb3'
+            u'dj0yJmk9eUtKYWFMSGdvS29NJmQ9WVdrOVkzcEtNR3QwTXpnbWNHbzlOakkxTXprd05qZzEmcz1jb25zdW1lcnNlY3JldCZ4PTE5',
+            u'eb8c96f8afc7c0eb3ccbe4ebaeb09e2d4a1248f3'
         )
         wr_self._oaSig = oauth.OAuthSignatureMethod_HMAC_SHA1()
 

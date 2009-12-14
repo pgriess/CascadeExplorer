@@ -49,24 +49,20 @@ import urllib2
 REQUEST_TOKEN_COOKIE_NAME = 'rt'
 ACCESS_TOKEN_COOKIE_NAME = 'at'
 
-class oauth_consumer:
-    '''A decorator class for RequestHandler methods; populates the handler
+def oauth_consumer(f):
+    '''A decorator function for RequestHandler methods; populates the handler
        with instance variables _oaSig and _oaConsumer for working with OAuth.'''
 
-    def __init__(self):
-        pass
+    def wrapper(wr_self, *wr_args, **wr_kwargs):
+        wr_self._oaConsumer = oauth.OAuthConsumer(
+            u'dj0yJmk9eTVoMnNFbHBlbVQ0JmQ9WVdrOVkzcEtNR3QwTXpnbWNHbzlOakkxTXprd05qZzEmcz1jb25zdW1lcnNlY3JldCZ4PWQ1',
+            u'4dc5bf318e068d8d518676d2eb8b1d6376bf4fb3'
+        )
+        wr_self._oaSig = oauth.OAuthSignatureMethod_HMAC_SHA1()
 
-    def __call__(self, f):
-        def wrapper(wr_self, *wr_args, **wr_kwargs):
-            wr_self._oaConsumer = oauth.OAuthConsumer(
-                u'dj0yJmk9eTVoMnNFbHBlbVQ0JmQ9WVdrOVkzcEtNR3QwTXpnbWNHbzlOakkxTXprd05qZzEmcz1jb25zdW1lcnNlY3JldCZ4PWQ1',
-                u'4dc5bf318e068d8d518676d2eb8b1d6376bf4fb3'
-            )
-            wr_self._oaSig = oauth.OAuthSignatureMethod_HMAC_SHA1()
+        return f(wr_self, *wr_args, **wr_kwargs)
 
-            return f(wr_self, *wr_args, **wr_kwargs)
-
-        return wrapper
+    return wrapper
 
 class oauth_token:
     '''A decorator class for RequestHandler methods; ensures that a valid
@@ -140,7 +136,7 @@ class OAuthInitHandler(webapp.RequestHandler):
        token and asks for it to be validated by the user. Stashes away the
        secret for the request token in a cookie.'''
 
-    @oauth_consumer()
+    @oauth_consumer
     def get(self):
         url = self.request.get('url')
 
@@ -198,6 +194,7 @@ class OAuthFinishHandler(webapp.RequestHandler):
        request token and exchanges it for an access token. Stashes away the
        secret for the access token in a cookie.'''
 
+    @oauth_consumer
     @oauth_token(REQUEST_TOKEN_COOKIE_NAME)
     def get(self):
         url = self.request.get('url')
@@ -218,13 +215,13 @@ class OAuthFinishHandler(webapp.RequestHandler):
                 u'oauth_nonce' : oauth.generate_nonce(),
                 u'oauth_timestamp' : oauth.generate_timestamp(),
                 u'oauth_consumer_key' : self._oaConsumer.key,
-                u'oauth_verifier' : oaReqToken.verifier,
-                u'oauth_token' : oaReqToken.key,
+                u'oauth_verifier' : self._oaToken.verifier,
+                u'oauth_token' : self._oaToken.key,
                 u'oauth_version' : u'1.0',
             }
         )
 
-        oaReq.sign_request(self._oaSig, self._oaConsumer, oaReqToken)
+        oaReq.sign_request(self._oaSig, self._oaConsumer, self._oaToken)
         logging.debug('Access token request URL: "%s"', oaReq.to_url())
 
         accTokenResp = urllib2.urlopen(oaReq.to_url())
@@ -267,6 +264,7 @@ class CascadeAPIHandler(webapp.RequestHandler):
 
     JSON_ENDPOINT_URL = u'http://mail.yahooapis.com/ws/mail/v1.1/jsonrpc'
 
+    @oauth_consumer
     @oauth_token(ACCESS_TOKEN_COOKIE_NAME)
     def post(self):
         # Construct a signed URL. We can do this regardless of the POST
@@ -306,6 +304,7 @@ class CascadeAPIHandler(webapp.RequestHandler):
 class ExplorerHandler(webapp.RequestHandler):
     '''Explore the Cascade API.'''
 
+    @oauth_consumer
     @oauth_token(ACCESS_TOKEN_COOKIE_NAME, True)
     def get(self):
         gtemplPath = os.path.join(

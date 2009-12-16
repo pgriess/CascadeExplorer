@@ -161,7 +161,7 @@ class OAuthInitHandler(webapp.RequestHandler):
         logging.debug('Requet token request URL: "%s"', oaReq.to_url())
 
         reqTokenResp = urllib2.urlopen(oaReq.to_url())
-        reqTokenRespContent = '\n'.join(reqTokenResp.readlines())
+        reqTokenRespContent = ''.join(reqTokenResp.readlines())
 
         if reqTokenResp.code != 200:
             logging.warning('Failed to get OAuth request token: "%s"', reqTokenRespContent)
@@ -228,7 +228,7 @@ class OAuthFinishHandler(webapp.RequestHandler):
         logging.debug('Access token request URL: "%s"', oaReq.to_url())
 
         accTokenResp = urllib2.urlopen(oaReq.to_url())
-        accTokenRespContent = '\n'.join(accTokenResp.readlines())
+        accTokenRespContent = ''.join(accTokenResp.readlines())
 
         if accTokenResp.code != 200:
             logging.warning('Failed to get OAuth access token: "%s"', accTokenRespContent)
@@ -284,22 +284,26 @@ class CascadeAPIHandler(webapp.RequestHandler):
             }
         )
         oaReq.sign_request(self._oaSig, self._oaConsumer, self._oaToken)
-        logging.debug('Cascade JSON request URL: "%s"', oaReq.to_url())
+        headers = { 'Content-Type' : 'application/json' }
+        headers.update(oaReq.to_header())
 
         try:
             cascadeReq = urllib2.Request(
-                url = oaReq.to_url(),
+                url = self.JSON_ENDPOINT_URL,
                 data = self.request.body,
-                headers = { 'Content-Type' : 'application/json' }
+                headers = headers
             )
             cascadeResp = urllib2.urlopen(cascadeReq)
         except urllib2.HTTPError, e:
             logging.debug(pprint.pformat(e))
             cascadeResp = e
 
-        cascadeRespContent = '\n'.join(cascadeResp.readlines())
+        cascadeRespContent = ''.join(cascadeResp.readlines())
 
-        self.response.set_status(cascadeResp.code)
+        rc = cascadeResp.code
+        if rc > 900:
+            rc = 500
+        self.response.set_status(rc)
         self.response.out.write(cascadeRespContent)
         for hn, hv in cascadeResp.headers.items():
             self.response.headers.add_header(hn, hv)

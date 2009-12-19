@@ -45,6 +45,7 @@ import pprint
 import simplejson
 import urllib
 import urllib2
+from yttrium_settings import OAUTH_CONSUMER_KEY, OAUTH_CONSUMER_SECRET
 
 REQUEST_TOKEN_COOKIE_NAME = 'rt'
 ACCESS_TOKEN_COOKIE_NAME = 'at'
@@ -58,8 +59,8 @@ def oauth_consumer(f):
 
     def wrapper(wr_self, *wr_args, **wr_kwargs):
         wr_self._oaConsumer = oauth.OAuthConsumer(
-            u'dj0yJmk9eUtKYWFMSGdvS29NJmQ9WVdrOVkzcEtNR3QwTXpnbWNHbzlOakkxTXprd05qZzEmcz1jb25zdW1lcnNlY3JldCZ4PTE5',
-            u'eb8c96f8afc7c0eb3ccbe4ebaeb09e2d4a1248f3'
+            OAUTH_CONSUMER_KEY,
+            OAUTH_CONSUMER_SECRET
         )
         wr_self._oaSig = oauth.OAuthSignatureMethod_HMAC_SHA1()
 

@@ -51,7 +51,7 @@ ACCESS_TOKEN_COOKIE_NAME = 'at'
 
 ###
 # XXX: Make this a class annotation, as we're just using this to get to
-#      'self' anyway.
+#      'self' anyway. Does Python 2.5.x support class decorators?
 def oauth_consumer(f):
     '''A decorator function for RequestHandler methods; populates the handler
        with instance variables _oaSig and _oaConsumer for working with OAuth.'''
@@ -298,7 +298,10 @@ class CascadeAPIHandler(webapp.RequestHandler):
             logging.debug(pprint.pformat(e))
             cascadeResp = e
 
+        # Collect and pretty-print JSON content, as it's easier to do so
+        # here than in the browser.
         cascadeRespContent = ''.join(cascadeResp.readlines())
+        cascadeRespContent = simplejson.dumps(simplejson.loads(cascadeRespContent), indent=4)
 
         rc = cascadeResp.code
         if rc > 900:

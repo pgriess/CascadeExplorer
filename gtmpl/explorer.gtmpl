@@ -16,11 +16,11 @@
                     $.ajax({
                         url: "/api/cascade",
                         type: "POST",
-                        data: $("#requestJSON").text(),
+                        data: $("#requestJSON").val(),
                         contentType: "application/json",
                         dataType: "json",
-                        complete: function() {
-                            alert("Response received!");
+                        complete: function(xhrReq, xhrStatus) {
+                            $("#responseJSON").text(xhrReq.responseText);
                         }
                     });
                 });
@@ -30,18 +30,16 @@
 
     <body>
         <div>
-            <textarea class="jsonPayload" id="requestJSON">
-                {
-                    "method" : "ListFolders",
-                    "params" : [{}],
-                    "id" : "12345"
-                }
-            </textarea>
+            <textarea class="jsonPayload" id="requestJSON">{
+    "method": "ListFolders",
+    "params": [{}],
+    "id": "12345"
+}</textarea>
             <button id="executeButton">click me</button>
         </div>
 
         <div>
-            <textarea class="jsonPayload" id="responseJSON">response json</textarea>
+            <pre id="responseJSON"/>
         </div>
     </body>
 </html>

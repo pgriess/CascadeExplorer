@@ -1,13 +1,7 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
     <head>
         <title>Cascade API Exploer</title>
-
-        <style type="text/css">
-            .jsonPayload {
-                width: 80%;
-                height: 30%;
-            }
-        </style>
 
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
         <script type="text/javascript">
@@ -20,7 +14,12 @@
                         contentType: "application/json",
                         dataType: "json",
                         complete: function(xhrReq, xhrStatus) {
-                            $("#responseJSON").text(xhrReq.responseText);
+                            var contentType = xhrReq.getResponseHeader("Content-Type");
+
+                            if (contentType.match("^application/json.*$") != null) {
+                                $("#responseJSON").text(xhrReq.responseText);
+                                $("#responseJSON").show();
+                            }
                         }
                     });
                 });
@@ -30,17 +29,18 @@
 
     <body>
         <div>
-            <textarea class="jsonPayload" id="requestJSON">{
+            <pre id="responseJSON" style="display: none;"></pre>
+            <div id="responseHTML" style="display: none;"></div>
+        </div>
+
+        <div style="width: 100%;">
+            <textarea style="position: relative; left: 10%; width: 80%;" id="requestJSON">{
     "method": "ListFolders",
     "params": [{}],
     "id": "12345"
 }</textarea>
-            <button id="executeButton">click me</button>
         </div>
-
-        <div>
-            <pre id="responseJSON"/>
-        </div>
+        <button style="width: 10%; position: relative; left: 80%;" id="executeButton">Go!</button>
     </body>
 </html>
 

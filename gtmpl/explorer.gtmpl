@@ -1,4 +1,3 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
     <head>
         <title>Cascade API Exploer</title>
@@ -34,7 +33,7 @@
         </div>
 
         <div style="width: 100%;">
-            <textarea style="position: relative; left: 10%; width: 80%;" id="requestJSON">{
+            <textarea style="position: relative; left: 10%; width: 80%; height: 40%;" id="requestJSON">{
     "method": "ListFolders",
     "params": [{}],
     "id": "12345"

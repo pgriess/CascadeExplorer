@@ -6,9 +6,6 @@
 #       the problem is that the bounce-back hostname is configured w/ the
 #       key, we can just create a key pointing to localhost.yttrium.ws.
 #
-# NOTE: Need to figure out how to expunge keys from git history if making
-#       this open source. Or change keys and de-activate the old one.
-#
 # TODO:
 #
 #   - Generating request / response pairs using AJAX direct to the Cascade
@@ -22,6 +19,9 @@
 #         to get both request and response back using a single response.
 #
 #   - Use Django directly so that porting off of GAE is easier.
+#
+#   - Render HTML responses from Cascade. These occur when a 999 error comes
+#     back and it'd be nice to show this graphically.
 
 import os
 import sys
@@ -299,10 +299,13 @@ class CascadeAPIHandler(webapp.RequestHandler):
             logging.debug(pprint.pformat(e))
             cascadeResp = e
 
-        # Collect and pretty-print JSON content, as it's easier to do so
-        # here than in the browser.
         cascadeRespContent = ''.join(cascadeResp.readlines())
-        cascadeRespContent = simplejson.dumps(simplejson.loads(cascadeRespContent), indent=4)
+
+        # Return some types of content pretty-printed, so that we don't have
+        # to deal with doing this in the browser in JavaScript.
+        if 'Content-Type' in cascadeResp.headers and \
+           cascadeResp.headers['Content-Type'] == 'application/json':
+            cascadeRespContent = simplejson.dumps(simplejson.loads(cascadeRespContent), indent=4)
 
         rc = cascadeResp.code
         if rc > 900:

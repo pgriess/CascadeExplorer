@@ -6,6 +6,10 @@
             /* Use Yahoo! fonts throughout */
             body {
                 font-family: arial,helvetica,clean,sans-serif;
+                background-color: #E8EDF0;
+                background-image: url('http://d.yimg.com/a/i/ww/met/th/slate/gsprite_pg_slate_20091124.png');
+                background-repeat: repeat-x;
+                background-position: 0 -1748px;
             }
 
             /* Style our buttons like the Yahoo! front page */
@@ -49,9 +53,9 @@
     </head>
 
     <body>
-        <div>
-            <pre id="responseJSON" style="display: none;"></pre>
-            <div id="responseHTML" style="display: none;"></div>
+        <div style="width: 100%;">
+            <pre id="responseJSON" style="display: none; position: relative; left: 10%; width: 80%; background-color: white; border: 1px solid grey;"></pre>
+            <div id="responseHTML" style="display: none; width: 80%;"></div>
         </div>
 
         <div style="width: 100%;">

@@ -2,6 +2,28 @@
     <head>
         <title>Cascade API Exploer</title>
 
+        <style type="text/css">
+            /* Use Yahoo! fonts throughout */
+            body {
+                font-family: arial,helvetica,clean,sans-serif;
+            }
+
+            /* Style our buttons like the Yahoo! front page */
+            button {
+                background-color: transparent;
+                background-image: url('http://d.yimg.com/a/i/ww/met/th/slate/gsprite_pg_slate_20091124.png');
+                background-repeat: repeat-x;
+                background-position: 0 -1672px;
+
+                height: 25px;
+                border: 1px solid #BD9E43;
+
+                font-weight: bold;
+                font-family: arial,helvetica,clean,sans-serif;
+                font-size: 0.85em;
+            }
+        </style>
+
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
         <script type="text/javascript">
             $(function() {
@@ -39,7 +61,11 @@
     "id": "12345"
 }</textarea>
         </div>
-        <button style="width: 10%; position: relative; left: 80%;" id="executeButton">Go!</button>
+        <div style="width: 100%;">
+            <div style="width: 10%; position: relative; left: 80%;">
+                <button style="width: 100%;" id="executeButton">Execute!</button>
+            </div>
+        </div>
     </body>
 </html>
 

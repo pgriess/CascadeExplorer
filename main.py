@@ -22,6 +22,9 @@
 #
 #   - Render HTML responses from Cascade. These occur when a 999 error comes
 #     back and it'd be nice to show this graphically.
+#
+#   - Add atom:generator element to indicate software name and version # for
+#     debugging.
 
 import os
 import sys
@@ -38,14 +41,17 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 import cgi
+import elementtree.ElementTree as ET
 import logging
 import oauth
 import os
 import pprint
 import simplejson
+import time
 import urllib
 import urllib2
 from yttrium_settings import OAUTH_CONSUMER_KEY, OAUTH_CONSUMER_SECRET
+from StringIO import StringIO
 
 REQUEST_TOKEN_COOKIE_NAME = 'rt'
 ACCESS_TOKEN_COOKIE_NAME = 'at'
@@ -329,6 +335,23 @@ class ExplorerHandler(webapp.RequestHandler):
 
         self.response.out.write(webapp.template.render(gtemplPath, {}))
 
+class AtomFoldersHandler(webapp.RequestHandler):
+    '''Generate Atom content for a Yahoo! Mail account.'''
+    
+    @oauth_consumer
+    @oauth_token(ACCESS_TOKEN_COOKIE_NAME, True)
+    def get(self):
+        self.response.headers[u'Content-Type'] = u'application/atom+xml'
+
+        feed = ET.Element('feed')
+        feed.set('xmlns', 'http://www.w3.org/2005/Atom')
+        ET.SubElement(feed, 'title').text = 'Folder list'
+        ET.SubElement(feed, 'updated').text = time.strftime('%Y-%m-%d')
+        ET.SubElement(feed, 'id').text = \
+            'yttrium://%s/folders' % (urllib.quote(self._oaToken.key, ''))
+
+        self.response.out.write(ET.tostring(feed, u'UTF-8'))
+
 def main():
     # Configure log levels
     logging.getLogger().setLevel(logging.DEBUG)
@@ -339,6 +362,7 @@ def main():
             ('/auth/oauth/finish', OAuthFinishHandler),
             ('/api/cascade', CascadeAPIHandler),
             ('/explorer', ExplorerHandler),
+            ('/atom/folders', AtomFoldersHandler),
             ('/', MainHandler)
         ],
         debug = True

@@ -40,6 +40,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 
+import cascade
 import cgi
 import elementtree.ElementTree as ET
 import logging
@@ -148,35 +149,14 @@ class OAuthInitHandler(webapp.RequestHandler):
 
     @oauth_consumer
     def get(self):
-        url = self.request.get('url')
-
-        oaReq = oauth.OAuthRequest(
-            http_method = u'GET',
-            http_url = u'https://api.login.yahoo.com/oauth/v2/get_request_token',
-            parameters = {
-                u'oauth_nonce' : oauth.generate_nonce(),
-                u'oauth_timestamp' : oauth.generate_timestamp(),
-                u'oauth_consumer_key' : self._oaConsumer.key,
-                u'oauth_version' : u'1.0',
-                u'xoauth_lang_pref' : u'en-us',
-                u'oauth_callback' : u'http://www.yttrium.ws/auth/oauth/finish?' +
-                    urllib.urlencode([(u'url', url)]),
-            }
-        )
-
-        oaReq.sign_request(self._oaSig, self._oaConsumer, None)
-        logging.debug('Requet token request URL: "%s"', oaReq.to_url())
-
-        reqTokenResp = urllib2.urlopen(oaReq.to_url())
-        reqTokenRespContent = ''.join(reqTokenResp.readlines())
-
-        if reqTokenResp.code != 200:
-            logging.warning('Failed to get OAuth request token: "%s"', reqTokenRespContent)
+        try:
+            tok, url = cascade.oauth_get_request_token(
+                self._oaConsumer,
+                self.request.get('url')
+            )
+        except cacsade.CascadeError:
             self.response.set_status(403)
             return
-
-        logging.info('Got request token: ' + reqTokenRespContent)
-        oaReqToken = oauth.OAuthToken.from_string(reqTokenRespContent)
 
         self.response.headers.add_header(
             u'Set-Cookie',
@@ -185,7 +165,7 @@ class OAuthInitHandler(webapp.RequestHandler):
                     REQUEST_TOKEN_COOKIE_NAME,
                     urllib.quote_plus(
                         u'oauth_token=%s&oauth_token_secret=%s' % \
-                            (oaReqToken.key, oaReqToken.secret)
+                            (tok.key, tok.secret)
                     )
                 )
         )
@@ -193,11 +173,8 @@ class OAuthInitHandler(webapp.RequestHandler):
             u'Set-Cookie',
             u'%s=; domain=.yttrium.ws; path=/; max-age=0' % (ACCESS_TOKEN_COOKIE_NAME)
         )
-        self.redirect(
-            u'https://api.login.yahoo.com/oauth/v2/request_auth?' +
-                urllib.urlencode([(u'oauth_token', oaReqToken.key)])
-        )
-        return
+        self.redirect(url)
+
 
 class OAuthFinishHandler(webapp.RequestHandler):
     '''Complete the OAuth token acquisition process. Acquires a validated
@@ -218,33 +195,15 @@ class OAuthFinishHandler(webapp.RequestHandler):
             self.response.set_status(403)
             return
 
-        oaReq = oauth.OAuthRequest(
-            http_method = u'GET',
-            http_url = u'https://api.login.yahoo.com/oauth/v2/get_token',
-            parameters = {
-                u'oauth_nonce' : oauth.generate_nonce(),
-                u'oauth_timestamp' : oauth.generate_timestamp(),
-                u'oauth_consumer_key' : self._oaConsumer.key,
-                u'oauth_verifier' : self._oaToken.verifier,
-                u'oauth_token' : self._oaToken.key,
-                u'oauth_version' : u'1.0',
-            }
-        )
-
-        oaReq.sign_request(self._oaSig, self._oaConsumer, self._oaToken)
-        logging.debug('Access token request URL: "%s"', oaReq.to_url())
-
-        accTokenResp = urllib2.urlopen(oaReq.to_url())
-        accTokenRespContent = ''.join(accTokenResp.readlines())
-
-        if accTokenResp.code != 200:
-            logging.warning('Failed to get OAuth access token: "%s"', accTokenRespContent)
+        try:
+            tok = cascade.oauth_get_access_token(
+                self._oaConsumer,
+                self._oaToken
+            )
+        except CascadeError:
             self.response.set_status(403)
             return
 
-        logging.info('Got access token: ' + accTokenRespContent)
-        oaAccToken = oauth.OAuthToken.from_string(accTokenRespContent)
-       
         self.response.headers.add_header(
             u'Set-Cookie',
             u'%s=; domain=.yttrium.ws; path=/; max-age=0' % (REQUEST_TOKEN_COOKIE_NAME)
@@ -256,7 +215,7 @@ class OAuthFinishHandler(webapp.RequestHandler):
                     ACCESS_TOKEN_COOKIE_NAME,
                     urllib.quote_plus(
                         u'oauth_token=%s&oauth_token_secret=%s' % \
-                            (oaAccToken.key, oaAccToken.secret)
+                            (tok.key, tok.secret)
                     )
                 )
         )
@@ -272,16 +231,15 @@ class CascadeAPIHandler(webapp.RequestHandler):
     '''The Cascade API handler. Requires an authenticated session and
        does not redirect to get one.'''
 
-    JSON_ENDPOINT_URL = u'http://mail.yahooapis.com/ws/mail/v1.1/jsonrpc'
-
     @oauth_consumer
     @oauth_token(ACCESS_TOKEN_COOKIE_NAME)
     def post(self):
-        # Construct a signed URL. We can do this regardless of the POST
-        # data provided to us by the client.
+        # We do our own Cascade request / response handling here, as the
+        # API doesn't provide access to the underlying HTTP objects, which
+        # we want to expose to our callers.
         oaReq = oauth.OAuthRequest(
             http_method = u'POST',
-            http_url = self.JSON_ENDPOINT_URL,
+            http_url = cascade.JSON11_ENDPOINT_URL,
             parameters = {
                 u'oauth_nonce' : oauth.generate_nonce(),
                 u'oauth_timestamp' : oauth.generate_timestamp(),
@@ -296,7 +254,7 @@ class CascadeAPIHandler(webapp.RequestHandler):
 
         try:
             cascadeReq = urllib2.Request(
-                url = self.JSON_ENDPOINT_URL,
+                url = cascade.JSON11_ENDPOINT_URL,
                 data = self.request.body,
                 headers = headers
             )
@@ -315,6 +273,7 @@ class CascadeAPIHandler(webapp.RequestHandler):
 
         rc = cascadeResp.code
         if rc > 900:
+            cascadeResp.headers['X-Yttrium-HTTP-Status'] = rc
             rc = 500
         self.response.set_status(rc)
         self.response.out.write(cascadeRespContent)

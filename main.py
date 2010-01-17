@@ -85,7 +85,7 @@ class oauth_token:
 
                 if self._redirect:
                     wr_self.redirect(
-                        'http://www.yttrium.ws/auth/oauth/init?' + \
+                        '/auth/oauth/init?' + \
                         urllib.urlencode(
                             [(u'url', wr_self.request.url)]
                         )
@@ -142,7 +142,8 @@ class OAuthInitHandler(webapp.RequestHandler):
         try:
             tok, url = cascade.oauth_get_request_token(
                 self._oaConsumer,
-                self.request.get('url')
+                'http://www.yttrium.ws/auth/oauth/finish?' +
+                    urllib.urlencode([(u'url', self.request.get('url'))])
             )
         except cascade.CascadeError:
             self.response.set_status(403)

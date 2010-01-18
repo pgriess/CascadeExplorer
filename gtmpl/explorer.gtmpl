@@ -54,11 +54,6 @@
 
     <body>
         <div style="width: 100%;">
-            <pre id="responseJSON" style="display: none; position: relative; left: 10%; width: 80%; background-color: white; border: 1px solid grey;"></pre>
-            <div id="responseHTML" style="display: none; width: 80%;"></div>
-        </div>
-
-        <div style="width: 100%;">
             <textarea style="position: relative; left: 10%; width: 80%; height: 40%;" id="requestJSON">{
     "method": "ListFolders",
     "params": [{}],
@@ -69,6 +64,11 @@
             <div style="width: 10%; position: relative; left: 80%;">
                 <button style="width: 100%;" id="executeButton">Execute!</button>
             </div>
+        </div>
+
+        <div style="width: 100%;">
+            <pre id="responseJSON" style="display: none; position: relative; left: 10%; width: 80%; background-color: white; border: 1px solid grey;"></pre>
+            <div id="responseHTML" style="display: none; width: 80%;"></div>
         </div>
     </body>
 </html>

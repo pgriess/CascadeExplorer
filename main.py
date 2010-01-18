@@ -95,30 +95,8 @@ class oauth_token:
 
                 return
 
-            # Parse bits from the cookie into an OAuth token object
-            tokenDict = dict(
-                cgi.parse_qsl(
-                    urllib.unquote_plus(
-                        wr_self.request.cookies[self._cookieName]
-                    )
-                )
-            )
-
-            if not u'oauth_token' in tokenDict:
-                logging.warning('No "%s" key in the "%s" cookie.' % ('oauth_token', self._cookieName))
-                wr_self.response.set_status(403)
-                return
-
-            if not u'oauth_token_secret' in tokenDict:
-                logging.warning('No "%s" key in the "%s" cookie.' % ('oauth_token_secret', self._cookieName))
-                wr_self.response.set_status(403)
-                return
-
-            # We've got a valid token; create it and invoke the function
-            # being wrapped
-            wr_self._oaToken = oauth.OAuthToken(
-                tokenDict['oauth_token'],
-                tokenDict['oauth_token_secret']
+            wr_self._oaToken = cascade.oauth_token_from_query_string(
+                wr_self.request.cookies[self._cookieName]
             )
 
             return f(wr_self, *wr_args, **wr_kwargs)
@@ -154,15 +132,14 @@ class OAuthInitHandler(webapp.RequestHandler):
             u'%s=%s; domain=.yttrium.ws; path=/' % \
                 (
                     REQUEST_TOKEN_COOKIE_NAME,
-                    urllib.quote_plus(
-                        u'oauth_token=%s&oauth_token_secret=%s' % \
-                            (tok.key, tok.secret)
-                    )
+                    cascade.oauth_token_to_query_string(tok)
                 )
         )
         self.response.headers.add_header(
             u'Set-Cookie',
-            u'%s=; domain=.yttrium.ws; path=/; max-age=0' % (ACCESS_TOKEN_COOKIE_NAME)
+            u'%s=; domain=.yttrium.ws; path=/; max-age=0' % (
+                ACCESS_TOKEN_COOKIE_NAME
+            )
         )
         self.redirect(url)
 
@@ -197,17 +174,16 @@ class OAuthFinishHandler(webapp.RequestHandler):
 
         self.response.headers.add_header(
             u'Set-Cookie',
-            u'%s=; domain=.yttrium.ws; path=/; max-age=0' % (REQUEST_TOKEN_COOKIE_NAME)
+            u'%s=; domain=.yttrium.ws; path=/; max-age=0' % (
+                REQUEST_TOKEN_COOKIE_NAME
+            )
         )
         self.response.headers.add_header(
             u'Set-Cookie',
             u'%s=%s; domain=.yttrium.ws; path=/' % \
                 (
                     ACCESS_TOKEN_COOKIE_NAME,
-                    urllib.quote_plus(
-                        u'oauth_token=%s&oauth_token_secret=%s' % \
-                            (tok.key, tok.secret)
-                    )
+                    cascade.oauth_token_to_query_string(tok)
                 )
         )
 
@@ -225,36 +201,57 @@ class CascadeAPIHandler(webapp.RequestHandler):
     @oauth_consumer
     @oauth_token(ACCESS_TOKEN_COOKIE_NAME)
     def post(self):
-        # We do our own Cascade request / response handling here, as the
-        # API doesn't provide access to the underlying HTTP objects, which
-        # we want to expose to our callers.
-        oaReq = oauth.OAuthRequest(
-            http_method = u'POST',
-            http_url = cascade.JSON11_ENDPOINT_URL,
-            parameters = {
-                u'oauth_nonce' : oauth.generate_nonce(),
-                u'oauth_timestamp' : oauth.generate_timestamp(),
-                u'oauth_consumer_key' : self._oaConsumer.key,
-                u'oauth_token' : self._oaToken.key,
-                u'oauth_version' : u'1.0'
-            }
-        )
-        oaReq.sign_request(self._oaSig, self._oaConsumer, self._oaToken)
-        headers = { 'Content-Type' : 'application/json' }
-        headers.update(oaReq.to_header())
 
-        try:
-            cascadeReq = urllib2.Request(
-                url = cascade.JSON11_ENDPOINT_URL,
-                data = self.request.body,
-                headers = headers
+        # Loop around Cascade call to allow for retrying if we need to
+        # refresh our OAuth access token.
+        cascadeResp = None
+        for attemptNo in range(0, 2):
+            import sys
+            sys.stderr.write('*** an ' + str(attemptNo) + '\n')
+
+            # We do our own Cascade request / response handling here, as the
+            # API doesn't provide access to the underlying HTTP objects, which
+            # we want to expose to our callers.
+            oaReq = oauth.OAuthRequest(
+                http_method = u'POST',
+                http_url = cascade.JSON11_ENDPOINT_URL,
+                parameters = {
+                    u'oauth_nonce' : oauth.generate_nonce(),
+                    u'oauth_timestamp' : oauth.generate_timestamp(),
+                    u'oauth_consumer_key' : self._oaConsumer.key,
+                    u'oauth_token' : self._oaToken.key,
+                    u'oauth_version' : u'1.0'
+                }
             )
-            cascadeResp = urllib2.urlopen(cascadeReq)
-        except urllib2.HTTPError, e:
-            logging.debug(pprint.pformat(e))
-            cascadeResp = e
+            oaReq.sign_request(self._oaSig, self._oaConsumer, self._oaToken)
+            headers = { 'Content-Type' : 'application/json' }
+            headers.update(oaReq.to_header())
 
-        cascadeRespContent = ''.join(cascadeResp.readlines())
+            try:
+                cascadeReq = urllib2.Request(
+                    url = cascade.JSON11_ENDPOINT_URL,
+                    data = self.request.body,
+                    headers = headers
+                )
+                cascadeResp = urllib2.urlopen(cascadeReq)
+
+                # We've gotten a 200 response, we're done
+                break
+            except urllib2.HTTPError, e:
+                # Only attempt access token refresh if we haven't already
+                # done so, and think that it might work.
+                if attemptNo > 0 or e.code != 999:
+                    cascadeResp = e
+                    break
+
+                self._oaToken = cascade.oauth_refresh_access_token(
+                    self._oaConsumer,
+                    self._oaToken
+                )
+            finally:
+                if cascadeResp:
+                    cascadeRespContent = ''.join(cascadeResp.readlines())
+                    cascadeResp.close()
 
         # Return some types of content pretty-printed, so that we don't have
         # to deal with doing this in the browser in JavaScript.

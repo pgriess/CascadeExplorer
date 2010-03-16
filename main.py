@@ -225,11 +225,11 @@ class CascadeAPIHandler(webapp.RequestHandler):
             )
             oaReq.sign_request(self._oaSig, self._oaConsumer, self._oaToken)
             headers = { 'Content-Type' : 'application/json' }
-            headers.update(oaReq.to_header())
+            url = oaReq.to_url();
 
             try:
                 cascadeReq = urllib2.Request(
-                    url = cascade.JSON11_ENDPOINT_URL,
+                    url = url,
                     data = self.request.body,
                     headers = headers
                 )
@@ -256,17 +256,20 @@ class CascadeAPIHandler(webapp.RequestHandler):
         # Return some types of content pretty-printed, so that we don't have
         # to deal with doing this in the browser in JavaScript.
         if 'Content-Type' in cascadeResp.headers and \
-           cascadeResp.headers['Content-Type'] == 'application/json':
+           cascadeResp.headers['Content-Type'].startswith('application/json'):
             cascadeRespContent = simplejson.dumps(simplejson.loads(cascadeRespContent), indent=4)
 
         rc = cascadeResp.code
         if rc > 900:
             cascadeResp.headers['X-Yttrium-HTTP-Status'] = rc
             rc = 500
+
         self.response.set_status(rc)
-        self.response.out.write(cascadeRespContent)
+
         for hn, hv in cascadeResp.headers.items():
-            self.response.headers.add_header(hn, hv)
+            self.response.headers[hn] = hv
+
+        self.response.out.write(cascadeRespContent)
 
 class ExplorerHandler(webapp.RequestHandler):
     '''Explore the Cascade API.'''

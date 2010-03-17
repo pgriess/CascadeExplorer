@@ -205,6 +205,7 @@ class CascadeAPIHandler(webapp.RequestHandler):
         # Loop around Cascade call to allow for retrying if we need to
         # refresh our OAuth access token.
         cascadeResp = None
+        oaTokStr = self._oaToken.to_string()
         for attemptNo in range(0, 2):
             # We do our own Cascade request / response handling here, as the
             # API doesn't provide access to the underlying HTTP objects, which
@@ -253,6 +254,18 @@ class CascadeAPIHandler(webapp.RequestHandler):
                 if cascadeResp:
                     cascadeRespContent = ''.join(cascadeResp.readlines())
                     cascadeResp.close()
+
+        # If we succeeded and we ended up refreshing the access token, update the
+        # client with the new value
+        if cascadeResp.code == 200 &&
+           oaTokStr != self._oaToken.to_string():
+            self.response.headers.add_header(
+                u'Set-Cookie',
+                u'%s=%s; domain=.yttrium.ws; path=/' % (
+                    ACCESS_TOKEN_COOKIE_NAME,
+                    cascade.oauth_token_to_query_string(self._oaToken)
+                )
+            )
 
         # Return some types of content pretty-printed, so that we don't have
         # to deal with doing this in the browser in JavaScript.

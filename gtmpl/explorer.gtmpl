@@ -106,7 +106,7 @@
             <p>
                 This doesn't seem to be documented in the <a
                 href="http://developer.yahoo.com/mail/">official
-                documenation</a>on YDN. The endpoint that the explorer uses
+                documenation</a> on YDN. The endpoint that the explorer uses
                 is
                 <code>http://mail.yahooapis.com/ws/mail/v1.1/jsonrpc</code>.
             </p>

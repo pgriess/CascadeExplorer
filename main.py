@@ -129,11 +129,10 @@ class OAuthInitHandler(webapp.RequestHandler):
 
         self.response.headers.add_header(
             u'Set-Cookie',
-            u'%s=%s; domain=.yttrium.ws; path=/' % \
-                (
-                    REQUEST_TOKEN_COOKIE_NAME,
-                    cascade.oauth_token_to_query_string(tok)
-                )
+            u'%s=%s; domain=.yttrium.ws; path=/' % (
+                REQUEST_TOKEN_COOKIE_NAME,
+                cascade.oauth_token_to_query_string(tok)
+            )
         )
         self.response.headers.add_header(
             u'Set-Cookie',
@@ -180,11 +179,10 @@ class OAuthFinishHandler(webapp.RequestHandler):
         )
         self.response.headers.add_header(
             u'Set-Cookie',
-            u'%s=%s; domain=.yttrium.ws; path=/' % \
-                (
-                    ACCESS_TOKEN_COOKIE_NAME,
-                    cascade.oauth_token_to_query_string(tok)
-                )
+            u'%s=%s; domain=.yttrium.ws; path=/' % (
+                ACCESS_TOKEN_COOKIE_NAME,
+                cascade.oauth_token_to_query_string(tok)
+            )
         )
 
         if url:

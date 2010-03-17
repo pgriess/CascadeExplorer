@@ -53,6 +53,18 @@
     </head>
 
     <body>
+        <div style="width: 90%; position: relative; left: 5%">
+            <h2>An explorer for the <a href="http://developer.yahoo.com/mail/">Yahoo! Mail API</a></h2>
+
+            <p>
+                Just enter some JSON in to the input area below, hit "Execute"
+                and the resulting Cascade response JSON will be displayed.
+                Questions? check out the <a href="#FAQ">FAQ</a> section, below
+                or shoot a tweet over to <a
+                href="http://twitter.com/pgriess"/>@pgriess</a>.
+            </p>
+        </div>
+
         <div style="width: 100%;">
             <textarea style="position: relative; left: 10%; width: 80%; height: 40%;" id="requestJSON">{
     "method": "ListFolders",
@@ -68,6 +80,55 @@
         <div style="width: 100%;">
             <pre id="responseJSON" style="display: none; position: relative; left: 10%; width: 80%; background-color: white; border: 1px solid grey;"></pre>
             <div id="responseHTML" style="display: none; width: 80%;"></div>
+        </div>
+
+        <div style="width: 90%; position: relative; left: 5%">
+            <a name="FAQ"/>
+            <h3>FAQ</h3>
+
+            <h4>Is my data being stored by the explorer?</h4>
+            <p>
+                No. The API explorer simply makes Cascade API calls and relays
+                the results to your browser. No data is stored on our servers.
+            </p>
+
+            <h4>How are you accessing my mailbox?</h4>
+            <p>
+                We are using <a
+                href="http://developer.yahoo.com/oauth/"/>OAuth</a>; this means
+                that we don't need to ask you for your password. Furthermore,
+                we don't store your credentials on our servers. Instead, your
+                OAuth credentials are kept in browser cookies, the contents of
+                which our server uses to issue Cascade requests.
+            </p>
+
+            <h4>What is the URL endpoint for the JSON API?</h4>
+            <p>
+                This doesn't seem to be documented in the <a
+                href="http://developer.yahoo.com/mail/">official
+                documenation</a>on YDN. The endpoint that the explorer uses
+                is
+                <code>http://mail.yahooapis.com/ws/mail/v1.1/jsonrpc</code>.
+            </p>
+
+            <h4>Are there any Cascade API libraries?</h4>
+            <p>
+                Yes!
+            </p> <p>
+                For Python, check out <a
+                href="http://github.com/pgriess/PyCascade"/>PyCascade</a>.
+                In addition, former Yahoo! Ryan Kennedy has a slew of
+                Cascade libraries that use BBAuth (a precursor to OAuth),
+                including implementations in <a href="http://unclehulka.com/ryan/blog/archives/2009/02/08/using-ruby-to-talk-to-yahoo-mail/"/>Ruby</a>, 
+                <a href="http://unclehulka.com/ryan/blog/archives/2007/10/16/adobe-air-taking-the-browser-out-of-browser-based-auth/">Adobe AIR</a>,
+                and <a href="http://unclehulka.com/ryan/blog/archives/2007/09/11/jax-ws-code-samples-for-the-yahoo-mail-web-service/">Java</a>.
+            </p>
+
+            <!-- FAQ entry template
+            <h4></h4>
+            <p>
+            </p>
+            -->
         </div>
     </body>
 </html>

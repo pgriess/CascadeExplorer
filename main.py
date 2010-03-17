@@ -235,9 +235,13 @@ class CascadeAPIHandler(webapp.RequestHandler):
                 # We've gotten a 200 response, we're done
                 break
             except urllib2.HTTPError, e:
-                # Only attempt access token refresh if we haven't already
-                # done so, and think that it might work.
-                if attemptNo > 0 or e.code != 401:
+                # Only attempt access token refresh if we haven't already done
+                # so, and think that it might work.
+                #
+                # Note that there appears to be some bug in the Yahoo!  OAuth
+                # implementation that causes really stale tokens to be rejected
+                # with 999 rather than 401.
+                if attemptNo > 0 or (e.code != 401 && e.code != 999):
                     cascadeResp = e
                     break
 

@@ -240,7 +240,7 @@ class CascadeAPIHandler(webapp.RequestHandler):
                 # Note that there appears to be some bug in the Yahoo!  OAuth
                 # implementation that causes really stale tokens to be rejected
                 # with 999 rather than 401.
-                if attemptNo > 0 or (e.code != 401 && e.code != 999):
+                if attemptNo > 0 or (e.code != 401 and e.code != 999):
                     cascadeResp = e
                     break
 
@@ -255,7 +255,7 @@ class CascadeAPIHandler(webapp.RequestHandler):
 
         # If we succeeded and we ended up refreshing the access token, update the
         # client with the new value
-        if cascadeResp.code == 200 &&
+        if cascadeResp.code == 200 and \
            oaTokStr != self._oaToken.to_string():
             self.response.headers.add_header(
                 u'Set-Cookie',

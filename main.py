@@ -206,9 +206,6 @@ class CascadeAPIHandler(webapp.RequestHandler):
         # refresh our OAuth access token.
         cascadeResp = None
         for attemptNo in range(0, 2):
-            import sys
-            sys.stderr.write('*** an ' + str(attemptNo) + '\n')
-
             # We do our own Cascade request / response handling here, as the
             # API doesn't provide access to the underlying HTTP objects, which
             # we want to expose to our callers.
@@ -240,7 +237,7 @@ class CascadeAPIHandler(webapp.RequestHandler):
             except urllib2.HTTPError, e:
                 # Only attempt access token refresh if we haven't already
                 # done so, and think that it might work.
-                if attemptNo > 0 or e.code != 999:
+                if attemptNo > 0 or e.code != 401:
                     cascadeResp = e
                     break
 

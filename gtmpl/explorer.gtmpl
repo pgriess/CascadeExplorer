@@ -56,8 +56,7 @@
         <div style="width: 100%;">
             <textarea style="position: relative; left: 10%; width: 80%; height: 40%;" id="requestJSON">{
     "method": "ListFolders",
-    "params": [{}],
-    "id": "12345"
+    "params": [{}]
 }</textarea>
         </div>
         <div style="width: 100%;">

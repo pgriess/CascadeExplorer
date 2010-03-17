@@ -29,6 +29,7 @@
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
+from google.appengine.api.urlfetch import DownloadError
 
 import cascade
 import cgi
@@ -237,12 +238,27 @@ class CascadeAPIHandler(webapp.RequestHandler):
                 # Only attempt access token refresh if we haven't already done
                 # so, and think that it might work.
                 #
-                # Note that there appears to be some bug in the Yahoo!  OAuth
-                # implementation that causes really stale tokens to be rejected
-                # with 999 rather than 401.
+                # XXX: Note that there appears to be some bug in the Yahoo!
+                #      OAuth implementation that causes really stale tokens to
+                #      be rejected with 999 rather than 401.
                 if attemptNo > 0 or (e.code != 401 and e.code != 999):
                     cascadeResp = e
                     break
+
+                self._oaToken = cascade.oauth_refresh_access_token(
+                    self._oaConsumer,
+                    self._oaToken
+                )
+            except DownloadError, e:
+                # We see this if we're getting throttled, wherein Yahoo!  will
+                # return an HTTP status code 999 and leave the TCP connection
+                # open, timing out the request.
+                #
+                # XXX: Because of the stale OAuth token bug mentioned above, we
+                #      consider this a situation where we should refresh our
+                #      OAuth token.
+                if attemptNo > 0:
+                    raise e
 
                 self._oaToken = cascade.oauth_refresh_access_token(
                     self._oaConsumer,

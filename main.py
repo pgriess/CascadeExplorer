@@ -318,7 +318,17 @@ class ExplorerHandler(webapp.RequestHandler):
     @oauth_token(ACCESS_TOKEN_COOKIE_NAME)
     def get(self):
         gtemplPath = None
-        gtemplParams = {}
+        gtemplParams = {
+            'faq_path' : os.path.join(
+                os.path.dirname(__file__),
+                'gtmpl',
+                'faq.gtmpl'
+            ),
+            'auth_url' : '/auth/oauth/init?' + \
+                urllib.urlencode([
+                    (u'url', self.request.url)
+                ])
+        }
 
         if self._oaToken:
             gtemplPath = os.path.join(
@@ -332,11 +342,6 @@ class ExplorerHandler(webapp.RequestHandler):
                 'gtmpl',
                 'explorer_auth.gtmpl'
             )
-
-            gtemplParams['auth_url'] = '/auth/oauth/init?' + \
-                urllib.urlencode([
-                    (u'url', self.request.url)
-                ])
 
         self.response.out.write(
             webapp.template.render(gtemplPath, gtemplParams)

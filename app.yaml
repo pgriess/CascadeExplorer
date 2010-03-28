@@ -4,7 +4,8 @@ runtime: python
 api_version: 1
 
 handlers:
-- url: /([^/]*\.(html|ico))
+- url: /([^/]*\.(html|ico|css))
+  expiration: "1d"
   static_files: static/\1
   upload: static/.*
 

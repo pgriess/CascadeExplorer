@@ -2,35 +2,27 @@
     <head>
         <title>Cascade API Exploer</title>
 
-        <style type="text/css">
-            /* Use Yahoo! fonts throughout */
-            body {
-                font-family: arial,helvetica,clean,sans-serif;
-                background-color: #E8EDF0;
-                background-image: url('http://d.yimg.com/a/i/ww/met/th/slate/gsprite_pg_slate_20091124.png');
-                background-repeat: repeat-x;
-                background-position: 0 -1748px;
-            }
-
-            /* Style our buttons like the Yahoo! front page */
-            button {
-                background-color: transparent;
-                background-image: url('http://d.yimg.com/a/i/ww/met/th/slate/gsprite_pg_slate_20091124.png');
-                background-repeat: repeat-x;
-                background-position: 0 -1672px;
-
-                height: 25px;
-                border: 1px solid #BD9E43;
-
-                font-weight: bold;
-                font-family: arial,helvetica,clean,sans-serif;
-                font-size: 0.85em;
-            }
-        </style>
+        <link rel="stylesheet" type="text/css" href="/yahoo.css"/>
     </head>
 
     <body>
-        <h2>No auth token found; click <a href="{{ auth_url }}">here</a> to authorize.</h2>
+        <div style="width: 90%; position: relative; left: 5%">
+            <h2>An explorer for the <a href="http://developer.yahoo.com/mail/">Yahoo! Mail API</a></h2>
+
+            <p>
+                Questions? check out the <a href="#FAQ">FAQ</a> section, below
+                or shoot a tweet over to <a
+                href="http://twitter.com/pgriess"/>@pgriess</a>.
+            </p>
+
+            <center>
+                <form action="{{ auth_url }}" method="get">
+                    <button style="width: 50%"/>Authorize</button>
+                </form>
+            </center>
+        </div>
+
+        {% include faq_path %}
     </body>
 </html>
 

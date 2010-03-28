@@ -1,0 +1,39 @@
+<html>
+    <head>
+        <title>Cascade API Exploer</title>
+
+        <style type="text/css">
+            /* Use Yahoo! fonts throughout */
+            body {
+                font-family: arial,helvetica,clean,sans-serif;
+                background-color: #E8EDF0;
+                background-image: url('http://d.yimg.com/a/i/ww/met/th/slate/gsprite_pg_slate_20091124.png');
+                background-repeat: repeat-x;
+                background-position: 0 -1748px;
+            }
+
+            /* Style our buttons like the Yahoo! front page */
+            button {
+                background-color: transparent;
+                background-image: url('http://d.yimg.com/a/i/ww/met/th/slate/gsprite_pg_slate_20091124.png');
+                background-repeat: repeat-x;
+                background-position: 0 -1672px;
+
+                height: 25px;
+                border: 1px solid #BD9E43;
+
+                font-weight: bold;
+                font-family: arial,helvetica,clean,sans-serif;
+                font-size: 0.85em;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h2>No auth token found; click <a href="{{ auth_url }}">here</a> to authorize.</h2>
+    </body>
+</html>
+
+<!--
+ | vim: filetype=html tabstop=4 shiftwidth=4 expandtab
+ -->

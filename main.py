@@ -69,36 +69,48 @@ def oauth_consumer(f):
 class oauth_token:
     '''A decorator class for RequestHandler methods; ensures that a valid
        OAuth access token cookie exists and stores it in self._oaToken. Can
-       issue a 302 over to /oauth/init to retrieve one if not.
-    
-       - The 'redirect' keyword argument specifies a boolean indicating
-         whether or not to 302 on failure. The default is a 403.'''
+       take a variety of actions if no token is found; desired action is
+       specifed in 'action' paramter to the constructor.'''
 
-    def __init__(self, cookieName, redirect = False):
+    def __init__(self, cookieName, action = None):
+        '''The 'cookieName' parameter is the name of the cookie to search
+           for the token.
+           
+        The 'action' parameter indicates the action to take if the cookie
+        is not found. Valid values are None, which causes the handler to
+        be invoked as normal, but with an empty _oaToken; 'redirect', which
+        will return a 302 to /auth/oauth/init; and 'reject', which will 
+        return a 403.'''
+
+        assert(action in [None, 'reject', 'redirect'])
+
         self._cookieName = cookieName
-        self._redirect = redirect
+        self._action = action
 
     def __call__(self, f):
         def wrapper(wr_self, *wr_args, **wr_kwargs):
+            wr_self._oaToken = None
+
             # If our cookie doesn't exist, react as specified by our caller
             if not self._cookieName in wr_self.request.cookies:
                 logging.warning('No access token found in request')
 
-                if self._redirect:
+                if self._action == 'redirect':
                     wr_self.redirect(
                         '/auth/oauth/init?' + \
-                        urllib.urlencode(
-                            [(u'url', wr_self.request.url)]
-                        )
+                        urllib.urlencode([
+                            (u'url', wr_self.request.url)
+                        ])
                     )
-                else:
+                elif self._action == 'reject':
                     wr_self.response.set_status(403)
 
-                return
-
-            wr_self._oaToken = cascade.oauth_token_from_query_string(
-                wr_self.request.cookies[self._cookieName]
-            )
+                if self._action != None:
+                    return
+            else:
+                wr_self._oaToken = cascade.oauth_token_from_query_string(
+                    wr_self.request.cookies[self._cookieName]
+                )
 
             return f(wr_self, *wr_args, **wr_kwargs)
 
@@ -150,7 +162,7 @@ class OAuthFinishHandler(webapp.RequestHandler):
        secret for the access token in a cookie.'''
 
     @oauth_consumer
-    @oauth_token(REQUEST_TOKEN_COOKIE_NAME)
+    @oauth_token(REQUEST_TOKEN_COOKIE_NAME, 'reject')
     def get(self):
         url = self.request.get('url')
 
@@ -198,7 +210,7 @@ class CascadeAPIHandler(webapp.RequestHandler):
        does not redirect to get one.'''
 
     @oauth_consumer
-    @oauth_token(ACCESS_TOKEN_COOKIE_NAME)
+    @oauth_token(ACCESS_TOKEN_COOKIE_NAME, 'reject')
     def post(self):
 
         # Loop around Cascade call to allow for retrying if we need to
@@ -303,21 +315,38 @@ class ExplorerHandler(webapp.RequestHandler):
     '''Explore the Cascade API.'''
 
     @oauth_consumer
-    @oauth_token(ACCESS_TOKEN_COOKIE_NAME, True)
+    @oauth_token(ACCESS_TOKEN_COOKIE_NAME)
     def get(self):
-        gtemplPath = os.path.join(
-            os.path.dirname(__file__),
-            'gtmpl',
-            'explorer.gtmpl'
-        )
+        gtemplPath = None
+        gtemplParams = {}
 
-        self.response.out.write(webapp.template.render(gtemplPath, {}))
+        if self._oaToken:
+            gtemplPath = os.path.join(
+                os.path.dirname(__file__),
+                'gtmpl',
+                'explorer.gtmpl'
+            )
+        else:
+            gtemplPath = os.path.join(
+                os.path.dirname(__file__),
+                'gtmpl',
+                'explorer_auth.gtmpl'
+            )
+
+            gtemplParams['auth_url'] = '/auth/oauth/init?' + \
+                urllib.urlencode([
+                    (u'url', self.request.url)
+                ])
+
+        self.response.out.write(
+            webapp.template.render(gtemplPath, gtemplParams)
+        )
 
 class AtomFoldersHandler(webapp.RequestHandler):
     '''Generate Atom content for a Yahoo! Mail account.'''
     
     @oauth_consumer
-    @oauth_token(ACCESS_TOKEN_COOKIE_NAME, True)
+    @oauth_token(ACCESS_TOKEN_COOKIE_NAME, 'redirect')
     def get(self):
         self.response.headers[u'Content-Type'] = u'application/atom+xml'
 

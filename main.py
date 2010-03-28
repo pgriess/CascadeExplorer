@@ -168,7 +168,7 @@ class OAuthFinishHandler(webapp.RequestHandler):
                 self._oaConsumer,
                 self._oaToken
             )
-        except CascadeError:
+        except cascade.CascadeError:
             self.response.set_status(403)
             return
 

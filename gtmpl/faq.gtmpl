@@ -40,6 +40,15 @@
         and <a href="http://unclehulka.com/ryan/blog/archives/2007/09/11/jax-ws-code-samples-for-the-yahoo-mail-web-service/">Java</a>.
     </p>
 
+    <h4>Where's the code?</h4>
+    <p>
+        The source for the API explorer is availbale on GitHub at <a
+        href="http://github.com/pgriess/CascadeExplorer"/>pgriess/CascadeExplorer</a>.
+        Contributions or feature suggestions are more than welcome.
+    </p> <p>
+        This code is licensed under the BSD license.
+    </p>
+
     <!-- FAQ entry template
     <h4></h4>
     <p>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Create an Atom API to Yahoo! Mail.
+# An API explorer for Yahoo! Mail.
 #
 # NOTE: Do we really always need to redirect to http://www.yttrium.ws? If
 #       the problem is that the bounce-back hostname is configured w/ the
@@ -22,9 +22,6 @@
 #
 #   - Render HTML responses from Cascade. These occur when a 999 error comes
 #     back and it'd be nice to show this graphically.
-#
-#   - Add atom:generator element to indicate software name and version # for
-#     debugging.
 
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
@@ -120,8 +117,7 @@ class MainHandler(webapp.RequestHandler):
     '''Other stuff should go here.'''
 
     def get(self):
-        self.response.headers[u'Content-Type'] = u'text/plain'
-        self.response.out.write(u'Hello, world!')
+        self.redirect('/explorer')
 
 class OAuthInitHandler(webapp.RequestHandler):
     '''Initialize the OAuth token acquisition process. Acquires a request
@@ -344,23 +340,6 @@ class ExplorerHandler(webapp.RequestHandler):
             webapp.template.render(gtemplPath, gtemplParams)
         )
 
-class AtomFoldersHandler(webapp.RequestHandler):
-    '''Generate Atom content for a Yahoo! Mail account.'''
-    
-    @oauth_consumer
-    @oauth_token(ACCESS_TOKEN_COOKIE_NAME, 'redirect')
-    def get(self):
-        self.response.headers[u'Content-Type'] = u'application/atom+xml'
-
-        feed = ET.Element('feed')
-        feed.set('xmlns', 'http://www.w3.org/2005/Atom')
-        ET.SubElement(feed, 'title').text = 'Folder list'
-        ET.SubElement(feed, 'updated').text = time.strftime('%Y-%m-%d')
-        ET.SubElement(feed, 'id').text = \
-            'yttrium://%s/folders' % (urllib.quote(self._oaToken.key, ''))
-
-        self.response.out.write(ET.tostring(feed, u'UTF-8'))
-
 def main():
     # Configure log levels
     logging.getLogger().setLevel(logging.DEBUG)
@@ -371,7 +350,6 @@ def main():
             ('/auth/oauth/finish', OAuthFinishHandler),
             ('/api/cascade', CascadeAPIHandler),
             ('/explorer', ExplorerHandler),
-            ('/atom/folders', AtomFoldersHandler),
             ('/', MainHandler)
         ],
         debug = True

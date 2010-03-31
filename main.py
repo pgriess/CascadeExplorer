@@ -324,10 +324,7 @@ class ExplorerHandler(webapp.RequestHandler):
                 'gtmpl',
                 'faq.gtmpl'
             ),
-            'auth_url' : '/auth/oauth/init?' + \
-                urllib.urlencode([
-                    (u'url', self.request.url)
-                ])
+            'auth_url' : self.request.url
         }
 
         if self._oaToken:

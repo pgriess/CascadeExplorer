@@ -16,7 +16,8 @@
             </p>
 
             <center>
-                <form action="{{ auth_url }}" method="get">
+                <form action="/auth/oauth/init" method="get">
+                    <input type="hidden" name="url" value="{{ auth_url }}"/>
                     <button style="width: 50%"/>Authorize</button>
                 </form>
             </center>

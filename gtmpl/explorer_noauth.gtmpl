@@ -24,6 +24,7 @@
         </div>
 
         {% include faq_path %}
+        {% include footer_path %}
     </body>
 </html>
 

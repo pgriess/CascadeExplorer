@@ -322,6 +322,14 @@ class ExplorerHandler(webapp.RequestHandler):
             ),
             'auth_url' : self.request.url
         }
+        gtemplParams = {
+            'footer_path' : os.path.join(
+                os.path.dirname(__file__),
+                'gtmpl',
+                'footer.gtmpl'
+            ),
+            'auth_url' : self.request.url
+        }
 
         if self._oaToken:
             gtemplPath = os.path.join(

@@ -333,7 +333,7 @@ class ExplorerHandler(webapp.RequestHandler):
             gtemplPath = os.path.join(
                 os.path.dirname(__file__),
                 'gtmpl',
-                'explorer_auth.gtmpl'
+                'explorer_noauth.gtmpl'
             )
 
         self.response.out.write(

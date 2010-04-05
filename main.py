@@ -320,9 +320,6 @@ class ExplorerHandler(webapp.RequestHandler):
                 'gtmpl',
                 'faq.gtmpl'
             ),
-            'auth_url' : self.request.url
-        }
-        gtemplParams = {
             'footer_path' : os.path.join(
                 os.path.dirname(__file__),
                 'gtmpl',

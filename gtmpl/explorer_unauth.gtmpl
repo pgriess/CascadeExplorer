@@ -18,7 +18,7 @@
             <center>
                 <form action="/auth/oauth/init" method="get">
                     <input type="hidden" name="url" value="{{ auth_url }}"/>
-                    <button style="width: 50%"/>Authorize</button>
+                    <input type="submit" style="width: 50%" value="Authorize"/>
                 </form>
             </center>
         </div>

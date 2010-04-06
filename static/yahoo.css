@@ -8,7 +8,7 @@ body {
 }
 
 /* Style our buttons like the Yahoo! front page */
-button {
+button, input[type="submit"] {
     background-color: transparent;
     background-image: url('http://d.yimg.com/a/i/ww/met/th/slate/gsprite_pg_slate_20091124.png');
     background-repeat: repeat-x;

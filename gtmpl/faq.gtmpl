@@ -49,6 +49,12 @@
         This code is licensed under the BSD license.
     </p>
 
+    <h4>This doesn't work with Internet Explorer!</h4>
+    <p>
+        I know; I'm working on it (slowly). Please feel free to send patches to
+        compliment my meagre HTML/CSS skills.
+    </p>
+
     <!-- FAQ entry template
     <h4></h4>
     <p>

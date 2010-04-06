@@ -307,42 +307,72 @@ class CascadeAPIHandler(webapp.RequestHandler):
 
         self.response.out.write(cascadeRespContent)
 
+class ExplorerUnauthHandler(webapp.RequestHandler):
+    '''Show an informational page about the explorer if the user is not already
+       authenticated.'''
+
+    @oauth_consumer
+    @oauth_token(ACCESS_TOKEN_COOKIE_NAME)
+    def get(self):
+        if self._oaToken:
+            self.redirect('/explorer')
+            return
+
+        self.response.out.write(
+            webapp.template.render(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    'gtmpl',
+                    'explorer_noauth.gtmpl'
+                ),
+                {
+                    'faq_path' : os.path.join(
+                        os.path.dirname(__file__),
+                        'gtmpl',
+                        'faq.gtmpl'
+                    ),
+                    'footer_path' : os.path.join(
+                        os.path.dirname(__file__),
+                        'gtmpl',
+                        'footer.gtmpl'
+                    ),
+                    'auth_url' : self.request.url
+                }
+            )
+        )
+
+        pass
+
 class ExplorerHandler(webapp.RequestHandler):
     '''Explore the Cascade API.'''
 
     @oauth_consumer
     @oauth_token(ACCESS_TOKEN_COOKIE_NAME)
     def get(self):
-        gtemplPath = None
-        gtemplParams = {
-            'faq_path' : os.path.join(
-                os.path.dirname(__file__),
-                'gtmpl',
-                'faq.gtmpl'
-            ),
-            'footer_path' : os.path.join(
-                os.path.dirname(__file__),
-                'gtmpl',
-                'footer.gtmpl'
-            ),
-            'auth_url' : self.request.url
-        }
-
-        if self._oaToken:
-            gtemplPath = os.path.join(
-                os.path.dirname(__file__),
-                'gtmpl',
-                'explorer.gtmpl'
-            )
-        else:
-            gtemplPath = os.path.join(
-                os.path.dirname(__file__),
-                'gtmpl',
-                'explorer_noauth.gtmpl'
-            )
+        if not self._oaToken:
+            self.redirect('/explorer-unauth')
+            return
 
         self.response.out.write(
-            webapp.template.render(gtemplPath, gtemplParams)
+            webapp.template.render(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    'gtmpl',
+                    'explorer.gtmpl'
+                ),
+                {
+                    'faq_path' : os.path.join(
+                        os.path.dirname(__file__),
+                        'gtmpl',
+                        'faq.gtmpl'
+                    ),
+                    'footer_path' : os.path.join(
+                        os.path.dirname(__file__),
+                        'gtmpl',
+                        'footer.gtmpl'
+                    )
+                }
+            )
         )
 
 def main():
@@ -355,6 +385,7 @@ def main():
             ('/auth/oauth/finish', OAuthFinishHandler),
             ('/api/cascade', CascadeAPIHandler),
             ('/explorer', ExplorerHandler),
+            ('/explorer-unauth', ExplorerUnauthHandler),
             ('/', MainHandler)
         ],
         debug = True

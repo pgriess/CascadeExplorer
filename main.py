@@ -188,7 +188,7 @@ class OAuthFinishHandler(webapp.RequestHandler):
         )
         self.response.headers.add_header(
             u'Set-Cookie',
-            u'%s=%s; domain=.yttrium.ws; path=/' % (
+            u'%s=%s; domain=.yttrium.ws; path=/; max-age=2678400' % (
                 ACCESS_TOKEN_COOKIE_NAME,
                 cascade.oauth_token_to_query_string(tok)
             )

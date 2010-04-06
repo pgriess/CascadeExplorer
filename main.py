@@ -323,7 +323,7 @@ class ExplorerUnauthHandler(webapp.RequestHandler):
                 os.path.join(
                     os.path.dirname(__file__),
                     'gtmpl',
-                    'explorer_noauth.gtmpl'
+                    'explorer_unauth.gtmpl'
                 ),
                 {
                     'faq_path' : os.path.join(

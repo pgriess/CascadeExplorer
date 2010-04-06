@@ -4,14 +4,16 @@
         
         <link rel="stylesheet" type="text/css" href="/yahoo.css"/>
 
-        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
         <script type="text/javascript">
             $(function() {
                 $("#executeButton").click(function() {
+                    var reqJSONString = $("#requestJSON").val();
+
                     $.ajax({
                         url: "/api/cascade",
                         type: "POST",
-                        data: $("#requestJSON").val(),
+                        data: reqJSONString,
                         contentType: "application/json",
                         dataType: "json",
                         complete: function(xhrReq, xhrStatus) {
@@ -23,6 +25,16 @@
                             }
                         }
                     });
+
+                    /* Track the Cascade API being invoked */
+                    var reqAPIMethod = "(null)";
+                    try {
+                        var reqJSON = $.parseJSON(reqJSONString);
+                        reqAPIMethod = reqJSON["method"] || reqAPIMethod;
+                    } catch (e) { }
+
+                    var pt = _gat._getTracker("UA-15657608-1");
+                    pt._trackPageview("/api/cascade/" + reqAPIMethod);
                 });
             });
         </script>

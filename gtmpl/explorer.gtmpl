@@ -54,7 +54,7 @@
         </div>
 
         <div style="width: 100%;">
-            <textarea style="position: relative; left: 10%; width: 80%; height: 40%;" id="requestJSON">{
+            <textarea id="requestJSON" style="position: relative; left: 10%; width: 80%; height: 40%;">{
     "method": "ListFolders",
     "params": [{}]
 }</textarea>
@@ -66,8 +66,8 @@
         </div>
 
         <div style="width: 100%;">
-            <pre id="responseJSON" style="display: none; position: relative; left: 10%; width: 80%; background-color: white; border: 1px solid grey;"></pre>
-            <div id="responseHTML" style="display: none; width: 80%;"></div>
+            <textarea id="responseJSON" readonly="yes"
+             style="display: none; position: relative; left: 10%; width: 80%; height: 40%;"></textarea>
         </div>
 
         {% include faq_path %}
